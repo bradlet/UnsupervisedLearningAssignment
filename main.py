@@ -5,8 +5,13 @@
 import os
 import numpy as np
 
+
 def load_data(name):
-    return np.loadtxt(fname=name, delimiter=",", dtype=np.dtype(np.uint8))
+    return np.loadtxt(fname=name, dtype=np.dtype(np.float), usecols=range(2))
+
 
 if __name__ == '__main__':
     os.chdir('./dataset')
+    dataset = load_data('545_cluster_dataset.txt')
+
+    print(dataset[0])
