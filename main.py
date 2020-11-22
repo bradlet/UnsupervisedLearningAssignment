@@ -61,7 +61,8 @@ class KMeansLearner:
         for i in range(0, ITERATIONS):
             self.assignment(data)
             self.update()
-            run_history = (self.calculate_error(), self.centroids)
+            # Create a tuple w/ (error, centroids that produced that error on the dataset), add that to history
+            run_history.append((self.calculate_error(), self.centroids))
             self.clusters = create_array_of_empty_lists(K_CLUSTERS)
         return run_history
 
