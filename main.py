@@ -4,8 +4,9 @@
 
 import os
 import numpy as np
+import matplotlib.pyplot as pl
 
-K_CLUSTERS = 10
+K_CLUSTERS = 3
 ITERATIONS = 10
 
 
@@ -62,7 +63,7 @@ class KMeansLearner:
             self.assignment(data)
             self.update()
             # Create a tuple w/ (error, centroids that produced that error on the dataset), add that to history
-            run_history.append((self.calculate_error(), self.centroids))
+            run_history.append((self.calculate_error(), self.centroids, self.clusters))
             self.clusters = create_array_of_empty_lists(K_CLUSTERS)
         return run_history
 
@@ -94,16 +95,25 @@ def load_data(name):
     return np.loadtxt(fname=name, dtype=np.dtype(np.float), usecols=range(2))
 
 
+def create_graph(run_instance):
+    clusters = run_instance[2]  # array of K_CLUSTER lists, each list contains points in the cluster
+    for cluster in clusters:
+        # Take transpose so that 0th indices are x's, 1st are y's
+        point_array = np.transpose(np.array(cluster))
+        pl.scatter(point_array[0], point_array[1])
+    pl.show()
+
+
 if __name__ == '__main__':
     os.chdir('./dataset')
     dataset = load_data('545_cluster_dataset.txt')
 
     learner = KMeansLearner(dataset)
-
     runs = learner.run_k_means(dataset)
-    print(len(runs))
+
+    print("SSE's: ")
     for run in runs:
-        print(run)
-    # FOR EACH POINT
-    #   Assign to cluster such that it is in the cluster who's euclidean distance to the mean is closest
-    # Then update means by taking the average value of all points in a cluster.
+        print(run[0])
+        create_graph(run)
+
+
