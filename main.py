@@ -10,7 +10,11 @@ K_CLUSTERS = 3
 ITERATIONS = 10
 
 
-class KMeansLearner:
+#################################
+# Parent learner - For EM Learners
+#################################
+
+class Learner:
 
     def __init__(self, data):
         self.centroids = self.random_centroid_init(data)
@@ -25,6 +29,46 @@ class KMeansLearner:
             centroids.append(data[random_indices[i]])
         return centroids
 
+    # The Expectation Step
+    def assignment(self, data):
+        raise NotImplementedError("Children of class Learner must implement the assignment method.")
+
+    # The Maximization Step
+    # Find the new mean point for each cluster and set that to the centroids
+    def update(self):
+        for i in range(0, K_CLUSTERS):
+            self.centroids[i] = mean_point(self.clusters[i])
+
+    # Calculate the SSE for a single cluster
+    def calculate_cluster_error(self, cluster_number):
+        cluster_squared_error = 0
+        for point in self.clusters[cluster_number]:
+            cluster_squared_error += np.square(distance(point, self.centroids[cluster_number]))
+        return cluster_squared_error
+
+    # Accumulate SSE for all clusters
+    def calculate_error(self):
+        sum_squared_error = 0
+        for i in range(0, K_CLUSTERS):
+            sum_squared_error += self.calculate_cluster_error(i)
+        return sum_squared_error
+
+    # Learn on Data n times, where n = ITERATIONS (global)
+    def run(self, data):
+        for i in range(0, ITERATIONS):
+            self.assignment(data)
+            self.update()
+
+
+#################################
+# K Mean Child Learner
+#################################
+
+class KMeansLearner(Learner):
+
+    def __init__(self, data):
+        super().__init__(data)
+
     # For each point in data, find which centroid is closest - argmin for distance()
     # Assign point to that centroids set.
     def assignment(self, data):
@@ -38,26 +82,9 @@ class KMeansLearner:
                     min_cluster = i
             self.clusters[min_cluster].append(point)
 
-    # Find the new mean point for each cluster and set that to the centroids
-    def update(self):
-        for i in range(0, K_CLUSTERS):
-            self.centroids[i] = mean_point(self.clusters[i])
-
-    def calculate_cluster_error(self, cluster_number):
-        cluster_squared_error = 0
-        for point in self.clusters[cluster_number]:
-            cluster_squared_error += np.square(distance(point, self.centroids[cluster_number]))
-        return cluster_squared_error
-
-    def calculate_error(self):
-        sum_squared_error = 0
-        for i in range(0, K_CLUSTERS):
-            sum_squared_error += self.calculate_cluster_error(i)
-        return sum_squared_error
-
     # Run the assignment and update steps n times, where n = ITERATIONS
     #   For each step, record the sum squared error and centroids for this step.
-    def run_k_means(self, data):
+    def run(self, data):
         run_history = list()
         for i in range(0, ITERATIONS):
             self.assignment(data)
@@ -67,6 +94,11 @@ class KMeansLearner:
             self.clusters = create_array_of_empty_lists(K_CLUSTERS)
         return run_history
 
+
+############################################
+# End of class implementations
+# Kept in single file for grading purposes.
+############################################
 
 def create_array_of_empty_lists(size):
     array = np.empty(size, type(list))
@@ -109,11 +141,9 @@ if __name__ == '__main__':
     dataset = load_data('545_cluster_dataset.txt')
 
     learner = KMeansLearner(dataset)
-    runs = learner.run_k_means(dataset)
+    runs = learner.run(dataset)
 
     print("SSE's: ")
     for run in runs:
         print(run[0])
         create_graph(run)
-
-
