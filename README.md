@@ -16,4 +16,9 @@ because that was a requirement, this is a homework assignment!
 This implementation randomly assigns centroids before running the algorithm.
 It saves the cluster states across multiple iterations and then
 plots that data using matplotlib.pyplot.
+
+###### Fuzzy C-Means
+This implementation differs in that a datapoint can be
+part of multiple clusters at once. To simplify graphing the data,
+I assigned datapoints to clusters based on their maximally weighted relationship.
     
