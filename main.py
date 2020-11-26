@@ -150,10 +150,11 @@ def create_array_of_empty_lists(size):
 
 
 # Returns euclidean distance between two points
-# Note: both point args should be np vectors of len 2 b/c they implement operator -
 def distance(point1, point2):
-    # np.linalg.norm uses l2 norm by default!
-    return np.linalg.norm(point2 - point1)
+    diff = np.square(point2 - point1)
+    if sum(diff) <= 0.0:
+        return 0.00001
+    return np.sqrt(sum(diff))
 
 
 # Returns the point representing the mean
