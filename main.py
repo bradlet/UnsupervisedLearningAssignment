@@ -8,6 +8,7 @@ import matplotlib.pyplot as pl
 
 K_CLUSTERS = 3
 ITERATIONS = 10
+FUZZIFIER = 1.1
 
 
 #################################
@@ -95,6 +96,47 @@ class KMeansLearner(Learner):
         return run_history
 
 
+#################################
+# Fuzzy c-means Child Learner
+#################################
+
+class FuzzyCLearner(Learner):
+
+    def __init__(self, data):
+        self.centroids = self.random_centroid_init(data)
+        self.weights = np.random.random((len(data), K_CLUSTERS))
+
+    def assignment(self, data):
+        for i in range(0, len(data)):
+            for j in range(0, K_CLUSTERS):
+                self.weights[i][j] = self.weight_update(data, i, j)
+
+    def weight_update(self, data, datapoint_num, centroid_num):
+        denominator = 0
+        for centroid in self.centroids:
+            denominator += \
+                (distance(data[datapoint_num], self.centroids[centroid_num]) /
+                 distance(data[datapoint_num], centroid)) ** (2/(FUZZIFIER-1))
+        return 1 / denominator
+
+    def update(self):
+        for i in range(0, len(self.centroids)):
+            self.centroids[i] = self.centroid_update(i)
+
+    def centroid_update(self, centroid_num):
+        numerator = np.dot(np.transpose(self.weights)[centroid_num] ** FUZZIFIER, dataset)
+        denominator = sum(np.transpose(self.weights)[centroid_num] ** FUZZIFIER)
+        return numerator / denominator
+
+    def run(self, data):
+        run_history = list()
+        for i in range(0, ITERATIONS):
+            self.assignment(data)
+            self.update()
+            run_history.append((self.centroids, self.weights))
+        return run_history
+
+
 ############################################
 # End of class implementations
 # Kept in single file for grading purposes.
@@ -140,10 +182,13 @@ if __name__ == '__main__':
     os.chdir('./dataset')
     dataset = load_data('545_cluster_dataset.txt')
 
-    learner = KMeansLearner(dataset)
-    runs = learner.run(dataset)
+    # learner = KMeansLearner(dataset)
+    # runs = learner.run(dataset)
+    #
+    # print("SSE's: ")
+    # for run in runs:
+    #     print(run[0])
+    #     create_graph(run)
 
-    print("SSE's: ")
-    for run in runs:
-        print(run[0])
-        create_graph(run)
+    fuzzy_learner = FuzzyCLearner(dataset)
+    fuzzy_learner.run(dataset)
