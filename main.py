@@ -54,11 +54,17 @@ class Learner:
             sum_squared_error += self.calculate_cluster_error(i)
         return sum_squared_error
 
-    # Learn on Data n times, where n = ITERATIONS (global)
+    # Run the assignment and update steps n times, where n = ITERATIONS
+    #   For each step, record the sum squared error and centroids for this step.
     def run(self, data):
+        run_history = list()
         for i in range(0, ITERATIONS):
             self.assignment(data)
             self.update()
+            # Create a tuple w/ (error, centroids that produced that error on the dataset), add that to history
+            run_history.append((self.calculate_error(), self.centroids, self.clusters))
+            self.clusters = create_array_of_empty_lists(K_CLUSTERS)
+        return run_history
 
 
 #################################
@@ -83,18 +89,6 @@ class KMeansLearner(Learner):
                     min_cluster = i
             self.clusters[min_cluster].append(point)
 
-    # Run the assignment and update steps n times, where n = ITERATIONS
-    #   For each step, record the sum squared error and centroids for this step.
-    def run(self, data):
-        run_history = list()
-        for i in range(0, ITERATIONS):
-            self.assignment(data)
-            self.update()
-            # Create a tuple w/ (error, centroids that produced that error on the dataset), add that to history
-            run_history.append((self.calculate_error(), self.centroids, self.clusters))
-            self.clusters = create_array_of_empty_lists(K_CLUSTERS)
-        return run_history
-
 
 #################################
 # Fuzzy c-means Child Learner
@@ -103,13 +97,15 @@ class KMeansLearner(Learner):
 class FuzzyCLearner(Learner):
 
     def __init__(self, data):
-        self.centroids = self.random_centroid_init(data)
+        super().__init__(data)
         self.weights = np.random.random((len(data), K_CLUSTERS))
 
     def assignment(self, data):
         for i in range(0, len(data)):
             for j in range(0, K_CLUSTERS):
                 self.weights[i][j] = self.weight_update(data, i, j)
+                max_cluster = np.argmax(self.weights[i])
+                self.clusters[max_cluster].append(data[i])
 
     def weight_update(self, data, datapoint_num, centroid_num):
         denominator = 0
@@ -127,14 +123,6 @@ class FuzzyCLearner(Learner):
         numerator = np.dot(np.transpose(self.weights)[centroid_num] ** FUZZIFIER, dataset)
         denominator = sum(np.transpose(self.weights)[centroid_num] ** FUZZIFIER)
         return numerator / denominator
-
-    def run(self, data):
-        run_history = list()
-        for i in range(0, ITERATIONS):
-            self.assignment(data)
-            self.update()
-            run_history.append((self.centroids, self.weights))
-        return run_history
 
 
 ############################################
@@ -183,13 +171,13 @@ if __name__ == '__main__':
     os.chdir('./dataset')
     dataset = load_data('545_cluster_dataset.txt')
 
-    # learner = KMeansLearner(dataset)
-    # runs = learner.run(dataset)
-    #
-    # print("SSE's: ")
-    # for run in runs:
-    #     print(run[0])
-    #     create_graph(run)
+    learners = list()
+    learners.append(KMeansLearner(dataset))
+    learners.append(FuzzyCLearner(dataset))
 
-    fuzzy_learner = FuzzyCLearner(dataset)
-    fuzzy_learner.run(dataset)
+    for learner in learners:
+        # the run method returns the complete run history for a learner's execution
+        print("Sum squared errors: ")
+        for run_data in learner.run(dataset):
+            print(run_data[0])
+            create_graph(run_data)
